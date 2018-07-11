@@ -55,3 +55,12 @@ func GetResourceRequest(pod *v1.Pod) *schedulercache.Resource {
 
 	return result
 }
+
+func GetNodeInfo(node *v1.Node) (*schedulercache.NodeInfo, error) {
+	nodeinfo := schedulercache.NewNodeInfo()
+	err := nodeinfo.SetNode(node)
+	if err != nil {
+		return nil, err
+	}
+	return nodeinfo, nil
+}
