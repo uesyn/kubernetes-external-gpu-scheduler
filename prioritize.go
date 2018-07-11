@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/util/sets"
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
 	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
 	"k8s.io/kubernetes/pkg/scheduler/schedulercache"
@@ -68,7 +67,7 @@ func GetNodeInfo(node *v1.Node) (*schedulercache.NodeInfo, error) {
 	return nodeinfo, nil
 }
 
-func ExternalResourcePrioritizer(pod *v1.Pod, node *v1.Node) (bool, error) {
+func ExternalResourcePrioritizer(pod *v1.Pod, node *v1.Node, targetResource string) (bool, error) {
 	if node == nil {
 		return false, fmt.Errorf("node not found")
 	}
@@ -77,22 +76,16 @@ func ExternalResourcePrioritizer(pod *v1.Pod, node *v1.Node) (bool, error) {
 		return false, err
 	}
 
-	// No extended resources should be ignored by default.
-	ignoredExtendedResources := sets.NewString()
-
 	var podRequest *schedulercache.Resource
 	podRequest = GetResourceRequest(pod)
 
 	allocatable := nodeInfo.AllocatableResource()
 
 	for rName, rQuant := range podRequest.ScalarResources {
-		if v1helper.IsExtendedResourceName(rName) {
-			// If this resource is one of the extended resources that should be
-			// ignored, we will skip checking it.
-			if ignoredExtendedResources.Has(string(rName)) {
-				continue
-			}
-		}
+		//
+		//		if v1helper.IsExtendedResourceName(rName) && rName.String() != targetResource {
+		//			continue
+		//		}
 		if allocatable.ScalarResources[rName] < rQuant+nodeInfo.RequestedResource().ScalarResources[rName] {
 			//			predicateFails = append(predicateFails, NewInsufficientResourceError(rName, podRequest.ScalarResources[rName], nodeInfo.RequestedResource().ScalarResources[rName], allocatable.ScalarResources[rName]))
 		}
