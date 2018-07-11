@@ -3,11 +3,9 @@ package main
 import (
 	"fmt"
 
-	"github.com/golang/glog"
 	"k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/sets"
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
-	"k8s.io/kubernetes/pkg/scheduler/algorithm"
 	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
 	"k8s.io/kubernetes/pkg/scheduler/schedulercache"
 )
@@ -43,10 +41,10 @@ func GetResourceRequest(pod *v1.Pod) *schedulercache.Resource {
 				if cpu := rQuantity.MilliValue(); cpu > result.MilliCPU {
 					result.MilliCPU = cpu
 				}
-			case v1.ResourceNvidiaGPU:
-				if gpu := rQuantity.Value(); gpu > result.NvidiaGPU {
-					result.NvidiaGPU = gpu
-				}
+				//			case v1.ResourceNvidiaGPU:
+				//				if gpu := rQuantity.Value(); gpu > result.NvidiaGPU {
+				//					result.NvidiaGPU = gpu
+				//				}
 			default:
 				if v1helper.IsScalarResourceName(rName) {
 					value := rQuantity.Value()
@@ -70,48 +68,22 @@ func GetNodeInfo(node *v1.Node) (*schedulercache.NodeInfo, error) {
 	return nodeinfo, nil
 }
 
-func PodFitsResources(pod *v1.Pod, meta algorithm.PredicateMetadata, nodeInfo *schedulercache.NodeInfo) (bool, []algorithm.PredicateFailureReason, error) {
-	node := nodeInfo.Node()
+func ExternalResourcePrioritizer(pod *v1.Pod, node *v1.Node) (bool, error) {
 	if node == nil {
-		return false, nil, fmt.Errorf("node not found")
+		return false, fmt.Errorf("node not found")
 	}
-
-	var predicateFails []algorithm.PredicateFailureReason
-	allowedPodNumber := nodeInfo.AllowedPodNumber()
-	if len(nodeInfo.Pods())+1 > allowedPodNumber {
-		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourcePods, 1, int64(len(nodeInfo.Pods())), int64(allowedPodNumber)))
+	nodeInfo, err := GetNodeInfo(node)
+	if err != nil {
+		return false, err
 	}
 
 	// No extended resources should be ignored by default.
 	ignoredExtendedResources := sets.NewString()
 
 	var podRequest *schedulercache.Resource
-	if predicateMeta, ok := meta.(*predicateMetadata); ok {
-		podRequest = predicateMeta.podRequest
-		if predicateMeta.ignoredExtendedResources != nil {
-			ignoredExtendedResources = predicateMeta.ignoredExtendedResources
-		}
-	} else {
-		// We couldn't parse metadata - fallback to computing it.
-		podRequest = GetResourceRequest(pod)
-	}
-	if podRequest.MilliCPU == 0 &&
-		podRequest.Memory == 0 &&
-		podRequest.EphemeralStorage == 0 &&
-		len(podRequest.ScalarResources) == 0 {
-		return len(predicateFails) == 0, predicateFails, nil
-	}
+	podRequest = GetResourceRequest(pod)
 
 	allocatable := nodeInfo.AllocatableResource()
-	if allocatable.MilliCPU < podRequest.MilliCPU+nodeInfo.RequestedResource().MilliCPU {
-		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourceCPU, podRequest.MilliCPU, nodeInfo.RequestedResource().MilliCPU, allocatable.MilliCPU))
-	}
-	if allocatable.Memory < podRequest.Memory+nodeInfo.RequestedResource().Memory {
-		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourceMemory, podRequest.Memory, nodeInfo.RequestedResource().Memory, allocatable.Memory))
-	}
-	if allocatable.EphemeralStorage < podRequest.EphemeralStorage+nodeInfo.RequestedResource().EphemeralStorage {
-		predicateFails = append(predicateFails, NewInsufficientResourceError(v1.ResourceEphemeralStorage, podRequest.EphemeralStorage, nodeInfo.RequestedResource().EphemeralStorage, allocatable.EphemeralStorage))
-	}
 
 	for rName, rQuant := range podRequest.ScalarResources {
 		if v1helper.IsExtendedResourceName(rName) {
@@ -122,17 +94,8 @@ func PodFitsResources(pod *v1.Pod, meta algorithm.PredicateMetadata, nodeInfo *s
 			}
 		}
 		if allocatable.ScalarResources[rName] < rQuant+nodeInfo.RequestedResource().ScalarResources[rName] {
-			predicateFails = append(predicateFails, NewInsufficientResourceError(rName, podRequest.ScalarResources[rName], nodeInfo.RequestedResource().ScalarResources[rName], allocatable.ScalarResources[rName]))
+			//			predicateFails = append(predicateFails, NewInsufficientResourceError(rName, podRequest.ScalarResources[rName], nodeInfo.RequestedResource().ScalarResources[rName], allocatable.ScalarResources[rName]))
 		}
 	}
-
-	if glog.V(10) {
-		if len(predicateFails) == 0 {
-			// We explicitly don't do glog.V(10).Infof() to avoid computing all the parameters if this is
-			// not logged. There is visible performance gain from it.
-			glog.Infof("Schedule Pod %+v on Node %+v is allowed, Node is running only %v out of %v Pods.",
-				podName(pod), node.Name, len(nodeInfo.Pods()), allowedPodNumber)
-		}
-	}
-	return len(predicateFails) == 0, predicateFails, nil
+	return true, nil
 }
