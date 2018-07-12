@@ -1,4 +1,4 @@
-package main
+package pkg
 
 import (
 	"fmt"
@@ -18,7 +18,7 @@ func (p Prioritize) Handler(args schedulerapi.ExtenderArgs) (*schedulerapi.HostP
 	return p.Func(args.Pod, args.Nodes.Items)
 }
 
-func GetResourceRequest(pod *v1.Pod) *schedulercache.Resource {
+func getResourceRequest(pod *v1.Pod) *schedulercache.Resource {
 	result := &schedulercache.Resource{}
 	for _, container := range pod.Spec.Containers {
 		result.Add(container.Resources.Requests)
@@ -58,7 +58,7 @@ func GetResourceRequest(pod *v1.Pod) *schedulercache.Resource {
 	return result
 }
 
-func GetNodeInfo(node *v1.Node) (*schedulercache.NodeInfo, error) {
+func getNodeInfo(node *v1.Node) (*schedulercache.NodeInfo, error) {
 	nodeinfo := schedulercache.NewNodeInfo()
 	err := nodeinfo.SetNode(node)
 	if err != nil {
@@ -71,18 +71,18 @@ func ExternalResourcePrioritizer(pod *v1.Pod, node *v1.Node, targetResource stri
 	if node == nil {
 		return false, fmt.Errorf("node not found")
 	}
-	nodeInfo, err := GetNodeInfo(node)
+	nodeInfo, err := getNodeInfo(node)
 	if err != nil {
 		return false, err
 	}
 
 	var podRequest *schedulercache.Resource
-	podRequest = GetResourceRequest(pod)
+	podRequest = getResourceRequest(pod)
 
 	allocatable := nodeInfo.AllocatableResource()
 
 	for rName, rQuant := range podRequest.ScalarResources {
-		//
+		//    Check whether resource name is extended resource, and target resource
 		//		if v1helper.IsExtendedResourceName(rName) && rName.String() != targetResource {
 		//			continue
 		//		}
