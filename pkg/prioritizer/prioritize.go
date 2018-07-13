@@ -1,7 +1,9 @@
-package pkg
+package prioritizer
 
 import (
 	"fmt"
+
+	"github.com/uesyn/kubernetes-external-gpu-scheduler/util/logs"
 
 	"k8s.io/api/core/v1"
 	v1helper "k8s.io/kubernetes/pkg/apis/core/v1/helper"
@@ -9,13 +11,14 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/schedulercache"
 )
 
-type Prioritize struct {
-	Name string
-	Func func(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error)
+type PrioritizeFunc func(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error)
+
+func Prioritize(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error) {
+	return nil, nil
 }
 
-func (p Prioritize) Handler(args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
-	return p.Func(args.Pod, args.Nodes.Items)
+func Handler(args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
+	return Prioritize(args.Pod, args.Nodes.Items)
 }
 
 func getResourceRequest(pod *v1.Pod) *schedulercache.Resource {
@@ -67,13 +70,13 @@ func getNodeInfo(node *v1.Node) (*schedulercache.NodeInfo, error) {
 	return nodeinfo, nil
 }
 
-func ExternalResourcePrioritizer(pod *v1.Pod, node *v1.Node, targetResource string) (bool, error) {
+func calcNodeScore(pod *v1.Pod, node *v1.Node, targetResource string) (int, error) {
 	if node == nil {
-		return false, fmt.Errorf("node not found")
+		return 0, fmt.Errorf("node not found")
 	}
 	nodeInfo, err := getNodeInfo(node)
 	if err != nil {
-		return false, err
+		return 0, err
 	}
 
 	var podRequest *schedulercache.Resource
@@ -81,14 +84,24 @@ func ExternalResourcePrioritizer(pod *v1.Pod, node *v1.Node, targetResource stri
 
 	allocatable := nodeInfo.AllocatableResource()
 
+	ratio64 := int64(0)
 	for rName, rQuant := range podRequest.ScalarResources {
-		//    Check whether resource name is extended resource, and target resource
-		//		if v1helper.IsExtendedResourceName(rName) && rName.String() != targetResource {
-		//			continue
-		//		}
-		if allocatable.ScalarResources[rName] < rQuant+nodeInfo.RequestedResource().ScalarResources[rName] {
-			//			predicateFails = append(predicateFails, NewInsufficientResourceError(rName, podRequest.ScalarResources[rName], nodeInfo.RequestedResource().ScalarResources[rName], allocatable.ScalarResources[rName]))
+		// Check whether resource name is extended resource
+		if v1helper.IsExtendedResourceName(rName) {
+			logs.Tracef("Extended Resource Name %s, Resouce Quantity %d.\n", rName.String(), rQuant)
+		} else {
+			continue
 		}
+
+		// Check whether extended resource is target.
+		if rName.String() != targetResource {
+			continue
+		}
+
+		ratio64 = rQuant + nodeInfo.RequestedResource().ScalarResources[rName]/allocatable.ScalarResources[rName]
+		ratio64 = ratio64 * 10
+		logs.Tracef("%s usage ratio is %d", rName.String(), ratio64)
+		break
 	}
-	return true, nil
+	return int(ratio64), nil
 }

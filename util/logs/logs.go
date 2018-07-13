@@ -2,7 +2,46 @@ package logs // import "github.com/uesyn/kubernetes-external-gpu-scheduler/util/
 
 import (
 	"log"
+	"strings"
+
+	"github.com/comail/colog"
 )
+
+func init() {
+	colog.SetDefaultLevel(colog.LDebug)
+	colog.SetMinLevel(colog.LTrace)
+	colog.SetFormatter(&colog.StdFormatter{
+		Colors: true,
+		Flag:   log.Ldate | log.Ltime | log.Lshortfile,
+	})
+	colog.Register()
+}
+
+func ConvertStringToCologLevel(strlevel string) colog.Level {
+	level := strings.ToLower(strlevel)
+	switch level {
+	case "trace":
+		return colog.LTrace
+	case "debug":
+		return colog.LDebug
+	case "info":
+		return colog.LInfo
+	case "warning":
+		return colog.LWarning
+	case "alert":
+		return colog.LAlert
+	case "error":
+		return colog.LError
+	default:
+		Warnf("\"%s\" can't be specified. You MUST select trace, debug, info, warning, error or alert as LOGLEVEL.", strlevel)
+		return colog.LInfo
+	}
+}
+
+func SetMinLogLevel(strlevel string) {
+	level := ConvertStringToCologLevel(strlevel)
+	colog.SetMinLevel(level)
+}
 
 func Infof(format string, a ...interface{}) {
 	format = "info: " + format

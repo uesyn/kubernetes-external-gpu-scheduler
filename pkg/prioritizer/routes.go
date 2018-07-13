@@ -1,4 +1,4 @@
-package pkg
+package prioritizer
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/uesyn/kubernetes-external-gpu-scheduler/util/logs"
 
 	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
 )
@@ -19,13 +20,13 @@ func checkBody(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func PrioritizeRoute(prioritize Prioritize) httprouter.Handle {
+func AddPrioritizeRoute(prioritizer Prioritizer) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		checkBody(w, r)
 
 		var buf bytes.Buffer
 		body := io.TeeReader(r.Body, &buf)
-		log.Print("info: ", prioritize.Name, " ExtenderArgs = ", buf.String())
+		log.Print("info: ", prioritizer.Name, " ExtenderArgs = ", buf.String())
 
 		var extenderArgs schedulerapi.ExtenderArgs
 		var hostPriorityList *schedulerapi.HostPriorityList
@@ -34,7 +35,7 @@ func PrioritizeRoute(prioritize Prioritize) httprouter.Handle {
 			panic(err)
 		}
 
-		if list, err := prioritize.Handler(extenderArgs); err != nil {
+		if list, err := prioritizer.Handler(extenderArgs); err != nil {
 			panic(err)
 		} else {
 			hostPriorityList = list
@@ -43,7 +44,7 @@ func PrioritizeRoute(prioritize Prioritize) httprouter.Handle {
 		if resultBody, err := json.Marshal(hostPriorityList); err != nil {
 			panic(err)
 		} else {
-			log.Print("info: ", prioritize.Name, " hostPriorityList = ", string(resultBody))
+			log.Print("info: ", prioritizer.Name, " hostPriorityList = ", string(resultBody))
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write(resultBody)
@@ -51,15 +52,15 @@ func PrioritizeRoute(prioritize Prioritize) httprouter.Handle {
 	}
 }
 
-func DebugLogging(h httprouter.Handle, path string) httprouter.Handle {
+func LoggingServer(handle httprouter.Handle, path string) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		log.Print("debug: ", path, " request body = ", r.Body)
-		h(w, r, p)
-		log.Print("debug: ", path, " response=", w)
+		logs.Debugln("PATH: ", path, "REQUEST: ", r.Body)
+		handle(w, r, p)
+		logs.Debugln("PATH: ", path, "RESPONSE: ", w)
 	}
 }
 
-func AddPrioritize(router *httprouter.Router, prioritize Prioritize) {
-	path := prioritiesPrefix + "/" + prioritize.Name
-	router.POST(path, DebugLogging(PrioritizeRoute(prioritize), path))
+func AddPrioritize(router *httprouter.Router, prioritizer Prioritizer) {
+	path := prioritiesPrefix + "/" + prioritizer.Name
+	router.POST(path, LoggingServer(AddPrioritizeRoute(prioritizer), path))
 }

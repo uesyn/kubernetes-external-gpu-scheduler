@@ -1,4 +1,4 @@
-package pkg // import "github.com/uesyn/kubernetes-external-gpu-scheduler/pkg"
+package prioritizer
 
 const (
 	apiPrefix        = "/scheduler"
