@@ -13,8 +13,22 @@ import (
 
 type PrioritizeFunc func(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error)
 
-func Prioritize(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error) {
-	return nil, nil
+func NewPrioritizeFunc(targetResource string) {
+	return func(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error) {
+	result := []schedulerapi.HostPriority{}
+	for _, node := range nodes {
+		r := schedulerapi.HostPriority{}
+		var err error = nil
+		r.Host = node.Name
+		r.Score, err = calcNodeScore(pod, node, targetResource)
+		if err != nil {
+			return nil, err
+		}
+		result = append(result, r)
+	}
+	var results schedulerapi.HostPriorityList = result
+	return &results, nil
+
 }
 
 func PrioritizeHandler(args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
