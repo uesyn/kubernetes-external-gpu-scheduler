@@ -17,7 +17,7 @@ func Prioritize(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, er
 	return nil, nil
 }
 
-func Handler(args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
+func PrioritizeHandler(args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
 	return Prioritize(args.Pod, args.Nodes.Items)
 }
 

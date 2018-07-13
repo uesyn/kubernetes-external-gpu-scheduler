@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
-	"log"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -26,25 +25,25 @@ func AddPrioritizeRoute(prioritizer Prioritizer) httprouter.Handle {
 
 		var buf bytes.Buffer
 		body := io.TeeReader(r.Body, &buf)
-		log.Print("info: ", prioritizer.Name, " ExtenderArgs = ", buf.String())
+		logs.Infoln(prioritizer.Name, " ExtenderArgs = ", buf.String())
 
 		var extenderArgs schedulerapi.ExtenderArgs
 		var hostPriorityList *schedulerapi.HostPriorityList
 
 		if err := json.NewDecoder(body).Decode(&extenderArgs); err != nil {
-			panic(err)
+			logs.Error(err)
 		}
 
 		if list, err := prioritizer.Handler(extenderArgs); err != nil {
-			panic(err)
+			logs.Error(err)
 		} else {
 			hostPriorityList = list
 		}
 
 		if resultBody, err := json.Marshal(hostPriorityList); err != nil {
-			panic(err)
+			logs.Error(err)
 		} else {
-			log.Print("info: ", prioritizer.Name, " hostPriorityList = ", string(resultBody))
+			logs.Infoln(prioritizer.Name, " hostPriorityList = ", string(resultBody))
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write(resultBody)
