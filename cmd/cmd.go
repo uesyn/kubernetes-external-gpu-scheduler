@@ -2,55 +2,10 @@ package cmd // import "github.com/uesyn/kubernetes-external-gpu-scheduler/cmd"
 import (
 	"os"
 
-	"github.com/golang/glog"
 	"github.com/spf13/cobra"
+	"github.com/uesyn/kubernetes-external-gpu-scheduler/cmd/options"
 	"github.com/uesyn/kubernetes-external-gpu-scheduler/util/logs"
-)
-
-//var (
-//	ZeroPriority = Prioritize{
-//		Name: "zero_score",
-//		Func: func(_ v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error) {
-//			var priorityList schedulerapi.HostPriorityList
-//			priorityList = make([]schedulerapi.HostPriority, len(nodes))
-//			for i, node := range nodes {
-//				priorityList[i] = schedulerapi.HostPriority{
-//					Host:  node.Name,
-//					Score: 0,
-//				}
-//			}
-//			return &priorityList, nil
-//		},
-//	}
-//)
-
-//func main() {
-//	level := StringToLevel(os.Getenv("LOG_LEVEL"))
-//	log.Print("Log level was set to ", strings.ToUpper(level.String()))
-//	colog.SetMinLevel(level)
-//
-//	router := httprouter.New()
-//
-//	priorities := []Prioritize{ZeroPriority}
-//	for _, p := range priorities {
-//		AddPrioritize(router, p)
-//	}
-//
-//	log.Print("info: server starting on the port :8080")
-//	if err := http.ListenAndServe(":8080", router); err != nil {
-//		log.Fatal(err)
-//	}
-//}
-
-type Options struct {
-	port     int
-	resource string
-	loglevel string
-	help     bool
-}
-
-var (
-	options = &Options{}
+	"mod/k8s.io/kubernetes@v1.10.0/cmd/controller-manager/app"
 )
 
 var rootCmd = &cobra.Command{
@@ -62,24 +17,25 @@ For example, in case that you want to cram pods requiring GPU resource into a hi
 }
 
 func run(cmd *cobra.Command, args []string) {
-	logs.SetMinLogLevel(options.loglevel)
-	if options.help {
+	logs.SetMinLogLevel(options.GetLoglevel())
+	if options.GetHelp() {
 		cmd.Help()
 		os.Exit(0)
 	}
 }
 
 func initRootCmd() {
-	rootCmd.Flags().BoolVarP(&options.help, "help", "h", false, "Show this help")
-	rootCmd.Flags().IntVarP(&options.port, "port", "p", 8008, "Listen port")
-	rootCmd.Flags().StringVarP(&options.resource, "target", "t", "nvidia.com/gpu", "Target Extended Resource")
-	rootCmd.Flags().StringVarP(&options.loglevel, "loglevel", "l", "info", "Log Level: trace, debug, info, warn, error, alert")
+	options.SetValue("help", *rootCmd.Flags().BoolP("help", "h", false, "Show this help"))
+	options.SetValue("port", *rootCmd.Flags().IntP("port", "p", 8008, "Listen port"))
+	options.SetValue("target", *rootCmd.Flags().StringP("target", "t", "nvidia.com/gpu", "Target Extended Resource"))
+	options.SetValue("loglevel", *rootCmd.Flags().StringP("loglevel", "l", "info", "Log Level: trace, debug, info, warn, error, alert"))
 }
 
 func Execute() {
 	initRootCmd()
 
 	if err := rootCmd.Execute(); err != nil {
-		glog.Fatal(err)
+		app.Serve(options.GetPort(), options.GetTarget())
+		logs.Errorln(err)
 	}
 }

@@ -21,17 +21,12 @@ func checkBody(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func PrioritizeHandler(prioritizer prioritizer.Prioritizer, args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
-	return prioritizer.Prioritize(&args.Pod, args.Nodes.Items)
-}
-
-func AddPrioritizeRoute(prioritizer prioritizer.Prioritizer) httprouter.Handle {
+func PrioritizeHandler(prioritizer prioritizer.Prioritizer) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		checkBody(w, r)
 
 		var buf bytes.Buffer
 		body := io.TeeReader(r.Body, &buf)
-		logs.Infoln(prioritizer.Name, " ExtenderArgs = ", buf.String())
 
 		var extenderArgs schedulerapi.ExtenderArgs
 		var hostPriorityList *schedulerapi.HostPriorityList
@@ -40,7 +35,7 @@ func AddPrioritizeRoute(prioritizer prioritizer.Prioritizer) httprouter.Handle {
 			logs.Error(err)
 		}
 
-		if list, err := prioritizer.Handler(extenderArgs); err != nil {
+		if list, err := prioritizer.Prioritize(*extenderArgs.Pod, extenderArgs.Nodes); err != nil {
 			logs.Error(err)
 		} else {
 			hostPriorityList = list
@@ -55,17 +50,4 @@ func AddPrioritizeRoute(prioritizer prioritizer.Prioritizer) httprouter.Handle {
 			w.Write(resultBody)
 		}
 	}
-}
-
-func LoggingServer(handle httprouter.Handle, path string) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, p httprouter.Params) {
-		logs.Debugln("PATH: ", path, "REQUEST: ", r.Body)
-		handle(w, r, p)
-		logs.Debugln("PATH: ", path, "RESPONSE: ", w)
-	}
-}
-
-func AddPrioritize(router *httprouter.Router, prioritizer Prioritizer) {
-	path := prioritiesPrefix + "/" + prioritizer.Name
-	router.POST(path, LoggingServer(AddPrioritizeRoute(prioritizer), path))
 }
