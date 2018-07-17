@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
+	"github.com/uesyn/kubernetes-external-gpu-scheduler/pkg/prioritizer"
 	"github.com/uesyn/kubernetes-external-gpu-scheduler/util/logs"
 
 	schedulerapi "k8s.io/kubernetes/pkg/scheduler/api"
@@ -14,16 +15,17 @@ import (
 
 func checkBody(w http.ResponseWriter, r *http.Request) {
 	if r.Body == nil {
+		logs.Errorln("Please send a request body")
 		http.Error(w, "Please send a request body", 400)
 		return
 	}
 }
 
-func PrioritizeHandler(prioritizer Prioritizer, args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
+func PrioritizeHandler(prioritizer prioritizer.Prioritizer, args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
 	return prioritizer.Prioritize(&args.Pod, args.Nodes.Items)
 }
 
-func AddPrioritizeRoute(prioritizer Prioritizer) httprouter.Handle {
+func AddPrioritizeRoute(prioritizer prioritizer.Prioritizer) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		checkBody(w, r)
 
