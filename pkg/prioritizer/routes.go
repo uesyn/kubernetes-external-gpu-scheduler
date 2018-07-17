@@ -19,6 +19,10 @@ func checkBody(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func PrioritizeHandler(prioritizer Prioritizer, args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
+	return prioritizer.Prioritize(&args.Pod, args.Nodes.Items)
+}
+
 func AddPrioritizeRoute(prioritizer Prioritizer) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		checkBody(w, r)

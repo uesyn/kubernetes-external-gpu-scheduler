@@ -11,28 +11,46 @@ import (
 	"k8s.io/kubernetes/pkg/scheduler/schedulercache"
 )
 
-type PrioritizeFunc func(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error)
-
-func NewPrioritizeFunc(targetResource string) {
-	return func(pod v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error) {
-	result := []schedulerapi.HostPriority{}
-	for _, node := range nodes {
-		r := schedulerapi.HostPriority{}
-		var err error = nil
-		r.Host = node.Name
-		r.Score, err = calcNodeScore(pod, node, targetResource)
-		if err != nil {
-			return nil, err
-		}
-		result = append(result, r)
-	}
-	var results schedulerapi.HostPriorityList = result
-	return &results, nil
-
+type Prioritizer interface {
+	Prioritize(*v1.Pod, []v1.Node) (*schedulerapi.HostPriorityList, error)
 }
 
-func PrioritizeHandler(args schedulerapi.ExtenderArgs) (*schedulerapi.HostPriorityList, error) {
-	return Prioritize(args.Pod, args.Nodes.Items)
+type PrioritizeFunc func(pod *v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error)
+
+type ExtendedResourcePrioritizer struct {
+	TargetResource string
+	Func           PrioritizeFunc
+}
+
+func NewExtendedResourcePrioritizer(targetResource string) *ExtendedResourcePrioritizer {
+	fn := newExtendedResourcePrioritizeFuncFactory(targetResource)
+	erp := ExtendedResourcePrioritizer{
+		TargetResource: targetResource,
+		Func:           fn,
+	}
+	return &erp
+}
+
+func (erp *ExtendedResourcePrioritizer) Prioritize(pod *v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error) {
+	return erp.Func(pod, nodes)
+}
+
+func newExtendedResourcePrioritizeFuncFactory(targetResource string) PrioritizeFunc {
+	return func(pod *v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error) {
+		result := []schedulerapi.HostPriority{}
+		for _, node := range nodes {
+			r := schedulerapi.HostPriority{}
+			var err error = nil
+			r.Host = node.Name
+			r.Score, err = calcNodeScore(pod, &node, targetResource)
+			if err != nil {
+				return nil, err
+			}
+			result = append(result, r)
+		}
+		var results schedulerapi.HostPriorityList = result
+		return &results, nil
+	}
 }
 
 func getResourceRequest(pod *v1.Pod) *schedulercache.Resource {

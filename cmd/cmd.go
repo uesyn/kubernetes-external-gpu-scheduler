@@ -1,5 +1,4 @@
 package cmd // import "github.com/uesyn/kubernetes-external-gpu-scheduler/cmd"
-
 import (
 	"os"
 
