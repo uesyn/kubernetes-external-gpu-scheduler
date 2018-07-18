@@ -49,11 +49,11 @@ func Infof(format string, a ...interface{}) {
 	for _, val := range a {
 		b = append(b, val)
 	}
-	log.Printf(format, b)
+	log.Printf(format, b...)
 }
 
 func Info(a ...interface{}) {
-	var b []interface{} = []interface{}{"info: "}
+	var b []interface{} = []interface{}{"info:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -61,7 +61,7 @@ func Info(a ...interface{}) {
 }
 
 func Infoln(a ...interface{}) {
-	var b []interface{} = []interface{}{"info: "}
+	var b []interface{} = []interface{}{"info:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -78,7 +78,7 @@ func Tracef(format string, a ...interface{}) {
 }
 
 func Trace(a ...interface{}) {
-	var b []interface{} = []interface{}{"trace: "}
+	var b []interface{} = []interface{}{"trace:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -86,7 +86,7 @@ func Trace(a ...interface{}) {
 }
 
 func Traceln(a ...interface{}) {
-	var b []interface{} = []interface{}{"trace: "}
+	var b []interface{} = []interface{}{"trace:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -103,7 +103,7 @@ func Debugf(format string, a ...interface{}) {
 }
 
 func Debug(a ...interface{}) {
-	var b []interface{} = []interface{}{"debug: "}
+	var b []interface{} = []interface{}{"debug:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -111,7 +111,7 @@ func Debug(a ...interface{}) {
 }
 
 func Debugln(a ...interface{}) {
-	var b []interface{} = []interface{}{"debug: "}
+	var b []interface{} = []interface{}{"debug:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -128,7 +128,7 @@ func Warnf(format string, a ...interface{}) {
 }
 
 func Warn(a ...interface{}) {
-	var b []interface{} = []interface{}{"warn: "}
+	var b []interface{} = []interface{}{"warn:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -136,7 +136,7 @@ func Warn(a ...interface{}) {
 }
 
 func Warnln(a ...interface{}) {
-	var b []interface{} = []interface{}{"warn: "}
+	var b []interface{} = []interface{}{"warn:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -153,7 +153,7 @@ func Errorf(format string, a ...interface{}) {
 }
 
 func Error(a ...interface{}) {
-	var b []interface{} = []interface{}{"error: "}
+	var b []interface{} = []interface{}{"error:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -161,7 +161,7 @@ func Error(a ...interface{}) {
 }
 
 func Errorln(a ...interface{}) {
-	var b []interface{} = []interface{}{"error: "}
+	var b []interface{} = []interface{}{"error:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -178,7 +178,7 @@ func Alertf(format string, a ...interface{}) {
 }
 
 func Alert(a ...interface{}) {
-	var b []interface{} = []interface{}{"alert: "}
+	var b []interface{} = []interface{}{"alert:"}
 	for _, val := range a {
 		b = append(b, val)
 	}
@@ -186,7 +186,7 @@ func Alert(a ...interface{}) {
 }
 
 func Alertln(a ...interface{}) {
-	var b []interface{} = []interface{}{"alert: "}
+	var b []interface{} = []interface{}{"alert:"}
 	for _, val := range a {
 		b = append(b, val)
 	}

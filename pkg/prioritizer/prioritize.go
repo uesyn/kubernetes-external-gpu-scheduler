@@ -37,8 +37,10 @@ func (erp *ExtendedResourcePrioritizer) Prioritize(pod *v1.Pod, nodes []v1.Node)
 
 func newExtendedResourcePrioritizeFuncFactory(targetResource string) PrioritizeFunc {
 	return func(pod *v1.Pod, nodes []v1.Node) (*schedulerapi.HostPriorityList, error) {
-		result := []schedulerapi.HostPriority{}
+		results := []schedulerapi.HostPriority{}
+		logs.Debugln("Extended Resource Prioritize Started...")
 		for _, node := range nodes {
+			logs.Debugln("Target Node:", node.Name)
 			r := schedulerapi.HostPriority{}
 			var err error = nil
 			r.Host = node.Name
@@ -46,10 +48,11 @@ func newExtendedResourcePrioritizeFuncFactory(targetResource string) PrioritizeF
 			if err != nil {
 				return nil, err
 			}
-			result = append(result, r)
+			logs.Debugln(r.Host, "score is", r.Score)
+			results = append(results, r)
 		}
-		var results schedulerapi.HostPriorityList = result
-		return &results, nil
+		var resultlist schedulerapi.HostPriorityList = results
+		return &resultlist, nil
 	}
 }
 
@@ -59,32 +62,12 @@ func getResourceRequest(pod *v1.Pod) *schedulercache.Resource {
 		result.Add(container.Resources.Requests)
 	}
 
-	// take max_resource(sum_pod, any_init_container)
 	for _, container := range pod.Spec.InitContainers {
 		for rName, rQuantity := range container.Resources.Requests {
-			switch rName {
-			case v1.ResourceMemory:
-				if mem := rQuantity.Value(); mem > result.Memory {
-					result.Memory = mem
-				}
-			case v1.ResourceEphemeralStorage:
-				if ephemeralStorage := rQuantity.Value(); ephemeralStorage > result.EphemeralStorage {
-					result.EphemeralStorage = ephemeralStorage
-				}
-			case v1.ResourceCPU:
-				if cpu := rQuantity.MilliValue(); cpu > result.MilliCPU {
-					result.MilliCPU = cpu
-				}
-				//			case v1.ResourceNvidiaGPU:
-				//				if gpu := rQuantity.Value(); gpu > result.NvidiaGPU {
-				//					result.NvidiaGPU = gpu
-				//				}
-			default:
-				if v1helper.IsScalarResourceName(rName) {
-					value := rQuantity.Value()
-					if value > result.ScalarResources[rName] {
-						result.SetScalar(rName, value)
-					}
+			if v1helper.IsScalarResourceName(rName) {
+				value := rQuantity.Value()
+				if value > result.ScalarResources[rName] {
+					result.SetScalar(rName, value)
 				}
 			}
 		}

@@ -3,7 +3,7 @@ package app
 import (
 	"bytes"
 	"encoding/json"
-	"io"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/julienschmidt/httprouter"
@@ -25,17 +25,23 @@ func PrioritizeHandler(prioritizer prioritizer.Prioritizer) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
 		checkBody(w, r)
 
-		var buf bytes.Buffer
-		body := io.TeeReader(r.Body, &buf)
+		b, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			logs.Errorln(err)
+		}
+		buf := bytes.NewBuffer(b)
+
+		logs.Debugln("Receive Data:", string(b))
 
 		var extenderArgs schedulerapi.ExtenderArgs
 		var hostPriorityList *schedulerapi.HostPriorityList
 
-		if err := json.NewDecoder(body).Decode(&extenderArgs); err != nil {
+		if err := json.NewDecoder(buf).Decode(&extenderArgs); err != nil {
 			logs.Error(err)
 		}
+		logs.Debugln("Json Decode Data:", string(b))
 
-		if list, err := prioritizer.Prioritize(*extenderArgs.Pod, extenderArgs.Nodes); err != nil {
+		if list, err := prioritizer.Prioritize(&extenderArgs.Pod, extenderArgs.Nodes.Items); err != nil {
 			logs.Error(err)
 		} else {
 			hostPriorityList = list
@@ -44,7 +50,7 @@ func PrioritizeHandler(prioritizer prioritizer.Prioritizer) httprouter.Handle {
 		if resultBody, err := json.Marshal(hostPriorityList); err != nil {
 			logs.Error(err)
 		} else {
-			logs.Infoln(prioritizer.Name, " hostPriorityList = ", string(resultBody))
+			logs.Debugln("hostPriorityList = ", string(resultBody))
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write(resultBody)
