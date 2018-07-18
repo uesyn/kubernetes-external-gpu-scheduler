@@ -1,4 +1,4 @@
-package prioritizer
+package app
 
 import (
 	"bytes"
