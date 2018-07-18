@@ -2,6 +2,7 @@ package prioritizer
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/uesyn/kubernetes-external-gpu-scheduler/util/logs"
 
@@ -99,24 +100,27 @@ func calcNodeScore(pod *v1.Pod, node *v1.Node, targetResource string) (int, erro
 
 	allocatable := nodeInfo.AllocatableResource()
 
-	ratio64 := int64(0)
+	ratio := int(0)
 	for rName, rQuant := range podRequest.ScalarResources {
 		// Check whether resource name is extended resource
 		if v1helper.IsExtendedResourceName(rName) {
-			logs.Tracef("Extended Resource Name %s, Resouce Quantity %d.\n", rName.String(), rQuant)
+			log.Printf("info: Extended Resource Name %s, Resouce Quantity %d.\n", rName.String(), rQuant)
 		} else {
 			continue
 		}
 
 		// Check whether extended resource is target.
+		log.Printf("debug: rName is %s\n", rName.String())
 		if rName.String() != targetResource {
+			log.Printf("debug: %s is not target resource.\n", rName.String())
 			continue
 		}
 
-		ratio64 = rQuant + nodeInfo.RequestedResource().ScalarResources[rName]/allocatable.ScalarResources[rName]
-		ratio64 = ratio64 * 10
-		logs.Tracef("%s usage ratio is %d", rName.String(), ratio64)
+		log.Printf("debug: Node Requested Resource is %d\n", nodeInfo.RequestedResource().ScalarResources[rName])
+		log.Printf("debug: Node Allocatable Resource is %d\n", allocatable.ScalarResources[rName])
+		ratio = int(float64(rQuant) + float64(nodeInfo.RequestedResource().ScalarResources[rName])/float64(allocatable.ScalarResources[rName])*float64(10))
+		log.Printf("info: %s usage ratio is %d\n", rName.String(), int(ratio))
 		break
 	}
-	return int(ratio64), nil
+	return ratio, nil
 }
