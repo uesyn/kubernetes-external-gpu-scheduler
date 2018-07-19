@@ -39,22 +39,6 @@ func SetConfigFromKubeconfig(kubeconfigpath string) error {
 	return nil
 }
 
-func GetClientInCluster() (*kubernetes.Clientset, error) {
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		return nil, err
-	}
-	return kubernetes.NewForConfig(config)
-}
-
-func GetClient(kubeconfigpath string) (*kubernetes.Clientset, error) {
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfigpath)
-	if err != nil {
-		return nil, err
-	}
-	return kubernetes.NewForConfig(config)
-}
-
 func GetPodsOnNode(node *v1.Node) ([]v1.Pod, error) {
 	if clientset == nil {
 		return nil, errors.New("You must run SetConfigInCluster or SetConfigFromKubeconfig.")
