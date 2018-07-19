@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/uesyn/kubernetes-external-gpu-scheduler/k8sclient"
 	"github.com/uesyn/kubernetes-external-gpu-scheduler/util/logs"
 
 	"k8s.io/api/core/v1"
@@ -82,6 +83,14 @@ func getNodeInfo(node *v1.Node) (*schedulercache.NodeInfo, error) {
 	err := nodeinfo.SetNode(node)
 	if err != nil {
 		return nil, err
+	}
+
+	pods, err := k8sclient.GetPodsOnNode(node)
+	if err != nil {
+		return nil, err
+	}
+	for _, pod := range pods {
+		nodeinfo.AddPod(&pod)
 	}
 	return nodeinfo, nil
 }

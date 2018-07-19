@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/uesyn/kubernetes-external-gpu-scheduler/cmd/app"
 	"github.com/uesyn/kubernetes-external-gpu-scheduler/cmd/options"
+	"github.com/uesyn/kubernetes-external-gpu-scheduler/k8sclient"
 	"github.com/uesyn/kubernetes-external-gpu-scheduler/util/logs"
 )
 
@@ -21,6 +22,7 @@ func init() {
 	options.SetValue(options.HELP, rootCmd.Flags().BoolP("help", "h", false, "Show this help"))
 	options.SetValue(options.PORT, rootCmd.Flags().IntP("port", "p", 8008, "Listen port"))
 	options.SetValue(options.TARGET, rootCmd.Flags().StringP("target", "t", "nvidia.com/gpu", "Target Extended Resource"))
+	options.SetValue(options.KUBECONFIG, rootCmd.Flags().StringP("kubeconfig", "k", "", "kubeconfig file path. If run in kubernetes pod, you can omit this option."))
 	options.SetValue(options.LOGLEVEL, rootCmd.Flags().StringP("loglevel", "l", "info", "Log Level: trace, debug, info, warn, error, alert"))
 }
 
@@ -30,10 +32,19 @@ func entrypoint(cmd *cobra.Command, args []string) {
 		cmd.Help()
 		os.Exit(0)
 
-	} else {
-		options.Show()
-		app.Serve(options.GetPort(), options.GetTarget())
 	}
+	options.Show()
+
+	var err error
+	if options.GetKubeConfig() == "" {
+		err = k8sclient.SetConfigInCluster()
+	} else {
+		err = k8sclient.SetConfigFromKubeconfig(options.GetKubeConfig())
+	}
+	if err != nil {
+		logs.Error(err)
+	}
+	app.Serve(options.GetPort(), options.GetTarget())
 }
 
 func Execute() {

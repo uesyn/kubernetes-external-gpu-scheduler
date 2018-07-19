@@ -9,6 +9,9 @@ require (
 	github.com/golang/glog v0.0.0-20160126235308-23def4e6c14b
 	github.com/golang/protobuf v1.1.0 // indirect
 	github.com/google/gofuzz v0.0.0-20170612174753-24818f796faf // indirect
+	github.com/googleapis/gnostic v0.2.0
+	github.com/howeyc/gopass v0.0.0-20170109162249-bf9dde6d0d2c
+	github.com/imdario/mergo v0.3.5
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v0.0.0-20180701071628-ab8a2e0c74be // indirect
 	github.com/julienschmidt/httprouter v0.0.0-20180411154501-adbc77eec0d9
@@ -27,9 +30,9 @@ require (
 	golang.org/x/time v0.0.0-20180412165947-fbb02b2291d2 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v2 v2.2.1 // indirect
-	k8s.io/api v0.0.0-20180602000000-8b7507fac3026
+	k8s.io/api v0.0.0-20180713172427-0f11257a8a25
 	k8s.io/apiextensions-apiserver v0.0.0-20180709191921-29a2b5e2b48e // indirect
-	k8s.io/apimachinery v0.0.0-20180620000000-e386b2658ed2 // indirect
+	k8s.io/apimachinery v0.0.0-20180619225948-e386b2658ed2
 	k8s.io/apiserver v0.0.0-20180709175922-2eca029519f6 // indirect
 	k8s.io/client-go v0.0.0-20180620000000-a312bfe35c401 // indirect
 	k8s.io/kubernetes v1.10.0

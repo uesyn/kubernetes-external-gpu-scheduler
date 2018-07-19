@@ -11,10 +11,11 @@ var options Options = Options{}
 type Arg string
 
 const (
-	TARGET   = "target"
-	PORT     = "port"
-	LOGLEVEL = "loglevel"
-	HELP     = "help"
+	TARGET     = "target"
+	PORT       = "port"
+	LOGLEVEL   = "loglevel"
+	HELP       = "help"
+	KUBECONFIG = "kubeconfig"
 )
 
 func Show() {
@@ -58,6 +59,15 @@ func GetTarget() string {
 		return *v
 	}
 	logs.Errorln("Invalid value:", options.field[TARGET])
+	return ""
+}
+
+func GetKubeConfig() string {
+	v, ok := options.field[KUBECONFIG].(*string)
+	if ok {
+		return *v
+	}
+	logs.Errorln("Invalid value:", options.field[KUBECONFIG])
 	return ""
 }
 
