@@ -119,16 +119,16 @@ func calcNodeScore(pod *v1.Pod, node *v1.Node, targetResource string) (int, erro
 		}
 
 		// Check whether extended resource is target.
-		log.Printf("debug: rName is %s\n", rName.String())
+		logs.Debugf("rName is %s\n", rName.String())
 		if rName.String() != targetResource {
-			log.Printf("debug: %s is not target resource.\n", rName.String())
+			logs.Debugf("%s is not target resource.\n", rName.String())
 			continue
 		}
 
-		log.Printf("debug: Node Requested Resource is %d\n", nodeInfo.RequestedResource().ScalarResources[rName])
-		log.Printf("debug: Node Allocatable Resource is %d\n", allocatable.ScalarResources[rName])
+		logs.Debugf("Node Requested Resource is %d\n", nodeInfo.RequestedResource().ScalarResources[rName])
+		logs.Debugf("Node Allocatable Resource is %d\n", allocatable.ScalarResources[rName])
 		ratio = int(float64(rQuant) + float64(nodeInfo.RequestedResource().ScalarResources[rName])/float64(allocatable.ScalarResources[rName])*float64(10))
-		log.Printf("info: %s usage ratio is %d\n", rName.String(), int(ratio))
+		logs.Infof("%s usage ratio is %d\n", rName.String(), int(ratio))
 		break
 	}
 	return ratio, nil

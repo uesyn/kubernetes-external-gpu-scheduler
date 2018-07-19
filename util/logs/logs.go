@@ -2,6 +2,7 @@ package logs // import "github.com/uesyn/kubernetes-external-gpu-scheduler/util/
 
 import (
 	"log"
+	"os"
 	"strings"
 
 	"github.com/comail/colog"
@@ -150,6 +151,7 @@ func Errorf(format string, a ...interface{}) {
 		b = append(b, val)
 	}
 	log.Printf(format, b)
+	os.Exit(255)
 }
 
 func Error(a ...interface{}) {
@@ -158,6 +160,7 @@ func Error(a ...interface{}) {
 		b = append(b, val)
 	}
 	log.Print(b...)
+	os.Exit(255)
 }
 
 func Errorln(a ...interface{}) {
@@ -166,6 +169,7 @@ func Errorln(a ...interface{}) {
 		b = append(b, val)
 	}
 	log.Println(b...)
+	os.Exit(255)
 }
 
 func Alertf(format string, a ...interface{}) {

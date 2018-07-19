@@ -31,7 +31,7 @@ func PrioritizeHandler(prioritizer prioritizer.Prioritizer) httprouter.Handle {
 		}
 		buf := bytes.NewBuffer(b)
 
-		logs.Debugln("Receive Data:", string(b))
+		logs.Traceln("Receive Data:", string(b))
 
 		var extenderArgs schedulerapi.ExtenderArgs
 		var hostPriorityList *schedulerapi.HostPriorityList
@@ -39,7 +39,7 @@ func PrioritizeHandler(prioritizer prioritizer.Prioritizer) httprouter.Handle {
 		if err := json.NewDecoder(buf).Decode(&extenderArgs); err != nil {
 			logs.Error(err)
 		}
-		logs.Debugln("Json Decode Data:", string(b))
+		logs.Traceln("Json Decode Data:", string(b))
 
 		if list, err := prioritizer.Prioritize(&extenderArgs.Pod, extenderArgs.Nodes.Items); err != nil {
 			logs.Error(err)
@@ -50,7 +50,7 @@ func PrioritizeHandler(prioritizer prioritizer.Prioritizer) httprouter.Handle {
 		if resultBody, err := json.Marshal(hostPriorityList); err != nil {
 			logs.Error(err)
 		} else {
-			logs.Debugln("hostPriorityList = ", string(resultBody))
+			logs.Debugln("HostPriorityList:", string(resultBody))
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
 			w.Write(resultBody)
